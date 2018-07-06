@@ -1,5 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+ """
+ORM框架：ORM(Object Relational Mapping)框架采用元数据来描述对象——关系映射细节，
+		元数据一般采用XML格式，并且放在专门的对象——映射文件中
+ """ 
+
 
 _author_ = "songzhen"
 
@@ -17,8 +22,8 @@ def create_pool(loop, **kw):
 	__pool = yield from aiomysql.create_pool(
 		host = kw.get('host', 'localhost'),
 		port = kw.get('port', 3306),
-		user = kw['user']
-		password = kw['password']
+		user = kw['root']
+		password = kw['root']
 		db = kw['db'],
 		charset = kw.get('charset', 'utf8'),
 		autocommit = kw.get('autocommit', True)
@@ -78,7 +83,7 @@ class Field(object):
 
 class StringField(Field):
 
-	def __init__(self, name=None, primary_key==False, default=None, ddl='varchar(100)'):
+	def __init__(self, name=None, primary_key=False, default=None, ddl='varchar(100)'):
 		super().__init__(name, ddl, primary_key, default)
 
 
