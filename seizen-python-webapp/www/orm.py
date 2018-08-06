@@ -1,12 +1,12 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
- """
+"""
 ORM框架：ORM(Object Relational Mapping)框架采用元数据来描述对象——关系映射细节，
 		元数据一般采用XML格式，并且放在专门的对象——映射文件中
- """ 
+""" 
 
 
-_author_ = "songzhen"
+__author__ = "songzhen"
 
 import asyncio, logging
 
@@ -22,12 +22,12 @@ def create_pool(loop, **kw):
 	__pool = yield from aiomysql.create_pool(
 		host = kw.get('host', 'localhost'),
 		port = kw.get('port', 3306),
-		user = kw['root']
-		password = kw['root']
+		user = kw['user'],
+		password = kw['password'],
 		db = kw['db'],
 		charset = kw.get('charset', 'utf8'),
-		autocommit = kw.get('autocommit', True)
-		maxsize = kw.get('maxsize', 10)
+		autocommit = kw.get('autocommit', True),
+		maxsize = kw.get('maxsize', 10),
 		minsize = kw.get('minsize', 1),
 		loop = loop
 	)
@@ -40,7 +40,7 @@ def select(sql, args, size=None):
 		cur = yield from conn.cursor(aiomysql.DictCursor)
 		yield from cur.execute(sql.replace("?", "%s"), args or ())
 		if size:
-			rs = yield from cur.fetchmany(size):
+			rs = yield from cur.fetchmany(size)
 		else:
 			rs = yield from cur.fetchall()
 		yield from cur.close()
@@ -113,10 +113,15 @@ class TextField(Field):
 
 class ModelMetaclass(type):
 	def __new__(cls, name, bases, attrs):
+		#排除Model类本身
 		if name=='Model':
 			return type.__new__(cls, name, bases, attrs)
+
+		# 获取table名称
 		tableName = attrs.get('__table__', None) or name
 		logging.info('found model: %s (table: %s)' % (name, tableName))
+		
+		# 获取所有的Field和主键名
 		mappings = dict()
 		fields = []
 		primaryKey = None
@@ -199,7 +204,7 @@ class Model(dict, metaclass=ModelMetaclass):
 				args.extend(limit)
 			else:
 				raise ValueError('Invalid limit value: %s' % str(limit))
-		rs = await select(' '.join(sql). args)
+		rs = await select(' '.join(sql), args)
 		return [cls(**r) for r in rs]
 
 	@classmethod
@@ -232,12 +237,12 @@ class Model(dict, metaclass=ModelMetaclass):
 	async def update(self):
 		args = list(map(self.getValue, self.__fields__))
 		args.append(self.getValue(self.__primary_key__))
-		rows.await execute(self.__update__, args)
+		rows = await execute(self.__update__, args)
 		if rows != 1:
-			logging.warn('failed to update by primary key: affected rows: %s' rows)
+			logging.warn('failed to update by primary key: affected rows: %s' % rows)
 
 	async def remove(self):
 		args = [self.getValue(self.__primary_key__)]
 		rows = await execute(self.__delete__, args)
-		if rows ！= 1:
+		if rows != 1:
 			logging.warn('failed to remove by primary key: affected rows: %s' % rows)
